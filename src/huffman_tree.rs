@@ -136,9 +136,9 @@ impl HuffmanTree {
 /// use huffman::huffman_tree::{set_bit, get_bit};
 ///
 /// let mut buf = vec![];
-/// set_bit(&mut buf, 0);
-/// set_bit(&mut buf, 2);
-/// set_bit(&mut buf, 9);
+/// set_bit(&mut buf, 0, true);
+/// set_bit(&mut buf, 2, true);
+/// set_bit(&mut buf, 9, true);
 ///
 /// assert!(get_bit(&buf, 0));
 /// assert!(!get_bit(&buf, 1));

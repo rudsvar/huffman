@@ -4,10 +4,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "Huffman",
-    about = "A program for compressing files using Huffman encoding"
-)]
+#[structopt(name = "huffman", about = "Compress files using Huffman encoding")]
 struct Opt {
     #[structopt(parse(from_os_str))]
     input_file: PathBuf,
@@ -33,7 +30,7 @@ fn main() -> io::Result<()> {
     encoded_file.read_to_end(&mut content)?;
 
     // Decode and verify
-    let decoded = huffman::decode(encoded).unwrap();
+    let decoded = huffman::decode(&encoded).unwrap();
     assert_eq!(input, decoded);
 
     Ok(())

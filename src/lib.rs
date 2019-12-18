@@ -14,16 +14,16 @@ pub fn encode(input: &String) -> Option<Vec<u8>> {
     let ht_json = serde_json::to_string(&ht).expect("Could not convert to json");
     let (mut encoded, n_bits) = ht.encode(&input)?;
 
-    let mut encoded_with_meta = String::new();
-    write!(encoded_with_meta, "{}\n{}\n", ht_json, n_bits).expect("Could not write to string");
+    let mut header = String::new();
+    write!(header, "{}\n{}\n", ht_json, n_bits).expect("Could not write to string");
 
-    let mut output = Vec::from(encoded_with_meta.as_bytes());
+    let mut output = Vec::from(header.as_bytes());
     output.append(&mut encoded);
 
     Some(output)
 }
 
-pub fn decode(input: Vec<u8>) -> Option<String> {
+pub fn decode(input: &Vec<u8>) -> Option<String> {
     if input.is_empty() {
         return Some(String::new());
     }
@@ -76,4 +76,37 @@ fn counts(input: &String) -> HashMap<char, usize> {
         };
     }
     cts
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::{decode, encode};
+
+    fn encode_decode(input: &str) {
+        let input = String::from(input);
+        let encoded = encode(&input).unwrap();
+        let decoded = decode(&encoded).unwrap();
+        assert_eq!(input, decoded);
+    }
+
+    #[test]
+    fn encode_decode_empty() {
+        encode_decode("");
+    }
+
+    #[test]
+    fn encode_decode_single() {
+        encode_decode("x");
+    }
+
+    #[test]
+    fn encode_decode_1() {
+        encode_decode("abbccc");
+    }
+
+    #[test]
+    fn encode_decode_2() {
+        encode_decode("This is a test string.\nIt has two lines.");
+    }
 }
