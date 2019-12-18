@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
     Node {
         zero: Box<HuffmanTree>,
@@ -53,14 +54,14 @@ impl HuffmanTree {
         }
     }
 
-    pub fn encode(&self, input: &String) -> Option<Vec<u8>> {
+    pub fn encode(&self, input: &String) -> Option<(Vec<u8>, usize)> {
         let mut output = Vec::new();
         let mut idx = 0;
         let codes = self.codes();
         for c in input.chars() {
-            self.encode_char(&mut output, &mut idx, &codes, c);
+            self.encode_char(&mut output, &mut idx, &codes, c)?;
         }
-        Some(output)
+        Some((output, idx))
     }
 
     fn encode_char(
@@ -69,14 +70,17 @@ impl HuffmanTree {
         idx: &mut usize,
         codes: &HashMap<char, Vec<bool>>,
         c: char,
-    ) {
-        let code = codes.get(&c).expect(&format!("No code for {}", c));
+    ) -> Option<()> {
+        let code = codes.get(&c)?;
         for c in code {
             if *c {
-                set_bit(output, *idx);
+                set_bit(output, *idx, true);
+            } else {
+                set_bit(output, *idx, false);
             }
             *idx += 1;
         }
+        Some(())
     }
 
     /// Return a map of the generated encodings
@@ -102,30 +106,23 @@ impl HuffmanTree {
         }
     }
 
-    pub fn decode(&self, input: &String) -> Option<String> {
+    pub fn decode(&self, input: &[u8], n_bits: usize) -> Option<String> {
         let mut res = String::new();
-        let mut start = 0;
-        while start < input.len() {
-            let sub = &input[start..];
-            if let Some((c, n)) = self.decode_one(sub, 0) {
-                start += n;
-                res.push(c);
-            } else {
-                eprintln!("Error at {}", sub);
-                return None;
-            }
+        let mut idx = 0;
+        while idx < n_bits {
+            let (c, new_idx) = self.decode_one(input, n_bits, idx)?;
+            idx = new_idx;
+            res.push(c);
         }
         Some(res)
     }
 
-    fn decode_one(&self, input: &str, depth: usize) -> Option<(char, usize)> {
+    fn decode_one(&self, input: &[u8], n_bits: usize, idx: usize) -> Option<(char, usize)> {
         match self {
-            Self::Leaf(c, _) => Some((*c, depth)),
-            Self::Node { zero, one } => match &input[0..1] {
-                "" => None,
-                "0" => zero.decode_one(&input[1..], depth + 1),
-                "1" => one.decode_one(&input[1..], depth + 1),
-                s => panic!("Invalid character in {:#}", s),
+            Self::Leaf(c, _) => Some((*c, idx)),
+            Self::Node { zero, one } => match get_bit(input, idx) {
+                false => zero.decode_one(input, n_bits, idx + 1),
+                true => one.decode_one(input, n_bits, idx + 1),
             },
         }
     }
@@ -148,13 +145,15 @@ impl HuffmanTree {
 /// assert!(get_bit(&buf, 2));
 /// assert!(get_bit(&buf, 9));
 /// ```
-pub fn set_bit(buf: &mut Vec<u8>, idx: usize) {
+pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
     let byte_idx = idx / 8;
     let bit_idx = 7 - idx % 8;
     while !(byte_idx < buf.len()) {
         buf.push(0);
     }
-    buf[byte_idx] |= 1 << bit_idx;
+    if value {
+        buf[byte_idx] |= 1 << bit_idx;
+    }
 }
 
 /// Get the bit at index `idx`.
@@ -171,7 +170,7 @@ pub fn set_bit(buf: &mut Vec<u8>, idx: usize) {
 /// assert!(get_bit(&buf, 5));
 /// assert!(!get_bit(&buf, 4));
 /// ```
-pub fn get_bit(buf: &Vec<u8>, idx: usize) -> bool {
+pub fn get_bit(buf: &[u8], idx: usize) -> bool {
     let byte_idx = idx / 8;
     let bit_idx = 7 - idx % 8;
     (buf[byte_idx] & (1 << bit_idx)) == (1 << bit_idx)

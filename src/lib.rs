@@ -2,17 +2,69 @@ pub mod huffman_tree;
 
 use huffman_tree::HuffmanTree;
 use std::collections::HashMap;
+use std::fmt::Write;
 
-pub fn encode(input: String) -> Vec<u8> {
+pub fn encode(input: &String) -> Option<Vec<u8>> {
     if input.is_empty() {
-        return Vec::new();
+        return Some(Vec::new());
     }
 
     let counts = counts(&input);
     let ht = HuffmanTree::from(&counts);
-    let encoded = ht.encode(&input).unwrap();
+    let ht_json = serde_json::to_string(&ht).expect("Could not convert to json");
+    let (mut encoded, n_bits) = ht.encode(&input)?;
 
-    encoded
+    let mut encoded_with_meta = String::new();
+    write!(encoded_with_meta, "{}\n{}\n", ht_json, n_bits).expect("Could not write to string");
+
+    let mut output = Vec::from(encoded_with_meta.as_bytes());
+    output.append(&mut encoded);
+
+    Some(output)
+}
+
+pub fn decode(input: Vec<u8>) -> Option<String> {
+    if input.is_empty() {
+        return Some(String::new());
+    }
+
+    // Split into three parts
+    let newline = 10;
+    let mut idx = 0;
+
+    // Read json
+    let mut json = Vec::new();
+    loop {
+        if input[idx] == newline {
+            idx += 1;
+            break;
+        }
+        json.push(input[idx]);
+        idx += 1;
+    }
+    let ht: HuffmanTree = serde_json::from_slice(&json).expect("Could not read json");
+
+    // Read num
+    let mut num_str = Vec::new();
+    loop {
+        if input[idx] == newline {
+            idx += 1;
+            break;
+        }
+        num_str.push(input[idx]);
+        idx += 1;
+    }
+    let n_bits: usize = String::from_utf8(num_str)
+        .expect("Could not read ")
+        .parse()
+        .unwrap();
+
+    // Read content
+    let encoded = &input[idx..];
+
+    let decoded = ht.decode(encoded, n_bits).unwrap();
+
+    Some(decoded)
 }
 
 fn counts(input: &String) -> HashMap<char, usize> {
@@ -24,39 +76,4 @@ fn counts(input: &String) -> HashMap<char, usize> {
         };
     }
     cts
-}
-
-// Huffman encoding format:
-//
-// In helper file to create tree:
-//
-//  a: 0
-//  b: 10
-//  ...
-//  `bit length`
-//
-// In compressed file:
-//
-//  010100101...
-//
-fn string_to_bytes(s: &String) -> (Vec<u8>, usize) {
-    let buflen = (s.len() as f64 / 8.0).ceil() as usize;
-    let mut buf = vec![0u8; buflen];
-    let mut idx = 0;
-    println!("{}", s);
-
-    for c in s.chars() {
-        let byte_idx = idx / 8;
-        let bit_idx = 7 - idx % 8;
-        let digit = c.to_digit(2).expect("Expected 0 or 1") as u8;
-        buf[byte_idx] |= digit << bit_idx;
-        idx += 1;
-    }
-
-    for i in &buf {
-        print!("{:08b}", i);
-    }
-    println!();
-
-    (buf, s.len())
 }
