@@ -1,10 +1,21 @@
-pub mod huffman_tree;
+mod huffman_tree;
 
 use huffman_tree::HuffmanTree;
 use std::collections::HashMap;
 use std::fmt::Write;
 
-pub fn encode(input: &String) -> Option<Vec<u8>> {
+/// Encode the given string using Huffman coding,
+/// and return a vector of `u8`.
+///
+/// # Examples
+///
+/// ```
+/// let input = "foo bar baz";
+/// let encoded = huffman::encode(input);
+/// assert!(encoded.is_some());
+/// ```
+///
+pub fn encode(input: &str) -> Option<Vec<u8>> {
     if input.is_empty() {
         return Some(Vec::new());
     }
@@ -23,51 +34,53 @@ pub fn encode(input: &String) -> Option<Vec<u8>> {
     Some(output)
 }
 
-pub fn decode(input: &Vec<u8>) -> Option<String> {
+/// Decode the slice of `u8` that was
+/// produced by `huffman::encode`.
+///
+/// # Examples
+///
+/// ```
+/// let input = "foo bar baz";
+/// let encoded = huffman::encode(input).unwrap();
+/// let decoded = huffman::decode(&encoded).unwrap();
+/// assert_eq!(input, decoded);
+/// ```
+///
+pub fn decode(input: &[u8]) -> Option<String> {
     if input.is_empty() {
         return Some(String::new());
     }
 
-    // Split into three parts
-    let newline = 10;
-    let mut idx = 0;
-
-    // Read json
-    let mut json = Vec::new();
-    loop {
-        if input[idx] == newline {
-            idx += 1;
-            break;
-        }
-        json.push(input[idx]);
-        idx += 1;
-    }
-    let ht: HuffmanTree = serde_json::from_slice(&json).expect("Could not read json");
-
-    // Read num
-    let mut num_str = Vec::new();
-    loop {
-        if input[idx] == newline {
-            idx += 1;
-            break;
-        }
-        num_str.push(input[idx]);
-        idx += 1;
-    }
-    let n_bits: usize = String::from_utf8(num_str)
-        .expect("Could not read ")
+    // Split into header
+    let (a, b) = header_split_locations(input)?;
+    let ht: HuffmanTree = serde_json::from_slice(&input[0..a]).expect("Invalid json");
+    let n_bits: usize = String::from_utf8(input[a + 1..b].to_vec())
+        .expect("Not valid utf8")
         .parse()
-        .unwrap();
+        .expect("Invalid number of bits");
+    let encoded = &input[b + 1..];
 
-    // Read content
-    let encoded = &input[idx..];
-
-    let decoded = ht.decode(encoded, n_bits).unwrap();
-
-    Some(decoded)
+    Some(ht.decode(encoded, n_bits)?)
 }
 
-fn counts(input: &String) -> HashMap<char, usize> {
+/// Take from the vector until a newline character is reached.
+fn header_split_locations(s: &[u8]) -> Option<(usize, usize)> {
+    let mut locations = Vec::new();
+    for (i, c) in s.iter().enumerate() {
+        if locations.len() == 2 {
+            break;
+        }
+        // Check if it is a line feed
+        if *c == 10 {
+            locations.push(i);
+        }
+    }
+
+    Some((*locations.get(0)?, *locations.get(1)?))
+}
+
+/// Get the frequency of each character in the provided string.
+fn counts(input: &str) -> HashMap<char, usize> {
     let mut cts = HashMap::new();
     for c in input.chars() {
         match cts.get(&c) {
@@ -81,7 +94,17 @@ fn counts(input: &String) -> HashMap<char, usize> {
 #[cfg(test)]
 mod tests {
 
-    use super::{decode, encode};
+    use super::*;
+
+    #[test]
+    fn counts_test() {
+        let cts = counts("aaabbc\n");
+        assert_eq!(cts.get(&'a'), Some(&3));
+        assert_eq!(cts.get(&'b'), Some(&2));
+        assert_eq!(cts.get(&'c'), Some(&1));
+        assert_eq!(cts.get(&'\n'), Some(&1));
+        assert_eq!(cts.get(&'x'), None);
+    }
 
     fn encode_decode(input: &str) {
         let input = String::from(input);
@@ -96,17 +119,27 @@ mod tests {
     }
 
     #[test]
-    fn encode_decode_single() {
+    fn encode_decode_char() {
         encode_decode("x");
+        encode_decode("@");
+        encode_decode("\n");
     }
 
     #[test]
-    fn encode_decode_1() {
+    fn encode_decode_string() {
         encode_decode("abbccc");
+        encode_decode("abcde");
+        encode_decode("aaaaaaaaaaaa");
     }
 
     #[test]
-    fn encode_decode_2() {
-        encode_decode("This is a test string.\nIt has two lines.");
+    fn encode_decode_whitespace() {
+        encode_decode("This is a test string.\nIt has two lines.\n");
+        encode_decode("This is also a test string, but this one is longer.");
+    }
+
+    #[test]
+    fn encode_decode_special() {
+        encode_decode("!!!@##$$%%%^&&**(_)");
     }
 }

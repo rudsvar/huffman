@@ -35,10 +35,21 @@ impl HuffmanTree {
     pub fn from(counts: &HashMap<char, usize>) -> HuffmanTree {
         let mut trees: BinaryHeap<HuffmanTree> = BinaryHeap::new();
 
+        // If there is only one character, a special tree is made.
+        if counts.len() == 1 {
+            let (&k, &v) = counts.iter().nth(0).unwrap();
+            return HuffmanTree::Node {
+                zero: Box::new(HuffmanTree::Leaf(k, v)),
+                one: Box::new(HuffmanTree::Leaf(k, v)),
+            };
+        }
+
+        // Add the initial trees.
         for (k, v) in counts {
             trees.push(Self::Leaf(*k, *v));
         }
 
+        // Construct the complete tree.
         loop {
             if trees.len() == 1 {
                 return trees.pop().expect("No trees");
@@ -54,7 +65,7 @@ impl HuffmanTree {
         }
     }
 
-    pub fn encode(&self, input: &String) -> Option<(Vec<u8>, usize)> {
+    pub fn encode(&self, input: &str) -> Option<(Vec<u8>, usize)> {
         let mut output = Vec::new();
         let mut idx = 0;
         let codes = self.codes();
@@ -131,20 +142,6 @@ impl HuffmanTree {
 /// Set the bit at index `idx`.
 /// The vector will grow as necessary.
 ///
-/// # Examples
-/// ```
-/// use huffman::huffman_tree::{set_bit, get_bit};
-///
-/// let mut buf = vec![];
-/// set_bit(&mut buf, 0, true);
-/// set_bit(&mut buf, 2, true);
-/// set_bit(&mut buf, 9, true);
-///
-/// assert!(get_bit(&buf, 0));
-/// assert!(!get_bit(&buf, 1));
-/// assert!(get_bit(&buf, 2));
-/// assert!(get_bit(&buf, 9));
-/// ```
 pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
     let byte_idx = idx / 8;
     let bit_idx = 7 - idx % 8;
@@ -158,20 +155,37 @@ pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
 
 /// Get the bit at index `idx`.
 ///
-/// # Examples
-///
-/// ```
-/// use huffman::huffman_tree::{get_bit};
-///
-/// let mut buf = vec![5];
-///
-/// assert!(get_bit(&buf, 7));
-/// assert!(!get_bit(&buf, 6));
-/// assert!(get_bit(&buf, 5));
-/// assert!(!get_bit(&buf, 4));
-/// ```
 pub fn get_bit(buf: &[u8], idx: usize) -> bool {
     let byte_idx = idx / 8;
     let bit_idx = 7 - idx % 8;
     (buf[byte_idx] & (1 << bit_idx)) == (1 << bit_idx)
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn set_bit_test() {
+        let mut buf = vec![];
+        set_bit(&mut buf, 0, true);
+        set_bit(&mut buf, 2, true);
+        set_bit(&mut buf, 9, true);
+
+        assert!(get_bit(&buf, 0));
+        assert!(!get_bit(&buf, 1));
+        assert!(get_bit(&buf, 2));
+        assert!(get_bit(&buf, 9));
+    }
+
+    #[test]
+    fn get_bit_test() {
+        let buf = vec![5];
+
+        assert!(get_bit(&buf, 7));
+        assert!(!get_bit(&buf, 6));
+        assert!(get_bit(&buf, 5));
+        assert!(!get_bit(&buf, 4));
+    }
 }
