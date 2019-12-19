@@ -83,10 +83,7 @@ fn header_split_locations(s: &[u8]) -> Option<(usize, usize)> {
 fn counts(input: &str) -> HashMap<char, usize> {
     let mut cts = HashMap::new();
     for c in input.chars() {
-        match cts.get(&c) {
-            None => cts.insert(c, 1),
-            Some(&prev) => cts.insert(c, prev + 1),
-        };
+        *cts.entry(c).or_insert(0) += 1;
     }
     cts
 }

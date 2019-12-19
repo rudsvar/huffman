@@ -6,6 +6,7 @@ use std::collections::HashMap;
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
     Node {
+        weight: usize,
         zero: Box<HuffmanTree>,
         one: Box<HuffmanTree>,
     },
@@ -27,7 +28,7 @@ impl PartialOrd for HuffmanTree {
 impl HuffmanTree {
     pub fn weight(&self) -> usize {
         match self {
-            Self::Node { zero, one } => zero.weight() + one.weight(),
+            Self::Node { weight, .. } => *weight,
             Self::Leaf(_, w) => *w,
         }
     }
@@ -41,6 +42,7 @@ impl HuffmanTree {
             return HuffmanTree::Node {
                 zero: Box::new(HuffmanTree::Leaf(k, v)),
                 one: Box::new(HuffmanTree::Leaf(k, v)),
+                weight: v,
             };
         }
 
@@ -59,6 +61,7 @@ impl HuffmanTree {
             let b = trees.pop().expect("No second least tree");
 
             trees.push(HuffmanTree::Node {
+                weight: a.weight() + b.weight(),
                 zero: Box::new(a),
                 one: Box::new(b),
             });
@@ -91,7 +94,7 @@ impl HuffmanTree {
             Self::Leaf(c, __) => {
                 char_to_code.insert(*c, path.clone());
             }
-            Self::Node { zero, one } => {
+            Self::Node { zero, one, .. } => {
                 path.push(false);
                 zero.codes_helper(char_to_code, path);
                 path.pop();
@@ -116,7 +119,7 @@ impl HuffmanTree {
     fn decode_one(&self, input: &[u8], n_bits: usize, idx: usize) -> Option<(char, usize)> {
         match self {
             Self::Leaf(c, _) => Some((*c, idx)),
-            Self::Node { zero, one } => match get_bit(input, idx) {
+            Self::Node { zero, one, .. } => match get_bit(input, idx) {
                 false => zero.decode_one(input, n_bits, idx + 1),
                 true => one.decode_one(input, n_bits, idx + 1),
             },
