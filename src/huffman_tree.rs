@@ -69,29 +69,14 @@ impl HuffmanTree {
         let mut output = Vec::new();
         let mut idx = 0;
         let codes = self.codes();
-        for c in input.chars() {
-            self.encode_char(&mut output, &mut idx, &codes, c)?;
+        for chr in input.chars() {
+            let code = codes.get(&chr)?;
+            for &c in code {
+                set_bit(&mut output, idx, c);
+                idx += 1
+            }
         }
         Some((output, idx))
-    }
-
-    fn encode_char(
-        &self,
-        output: &mut Vec<u8>,
-        idx: &mut usize,
-        codes: &HashMap<char, Vec<bool>>,
-        c: char,
-    ) -> Option<()> {
-        let code = codes.get(&c)?;
-        for c in code {
-            if *c {
-                set_bit(output, *idx, true);
-            } else {
-                set_bit(output, *idx, false);
-            }
-            *idx += 1;
-        }
-        Some(())
     }
 
     /// Return a map of the generated encodings
@@ -148,8 +133,11 @@ pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
     while !(byte_idx < buf.len()) {
         buf.push(0);
     }
+    let mask = 1 << bit_idx;
     if value {
-        buf[byte_idx] |= 1 << bit_idx;
+        buf[byte_idx] |= mask;
+    } else {
+        buf[byte_idx] &= !mask;
     }
 }
 
@@ -167,7 +155,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn set_bit_test() {
+    fn set_bit_1() {
         let mut buf = vec![];
         set_bit(&mut buf, 0, true);
         set_bit(&mut buf, 2, true);
@@ -177,6 +165,19 @@ mod tests {
         assert!(!get_bit(&buf, 1));
         assert!(get_bit(&buf, 2));
         assert!(get_bit(&buf, 9));
+    }
+
+    #[test]
+    fn set_bit_2() {
+        let mut buf = vec![255];
+        set_bit(&mut buf, 0, false);
+        set_bit(&mut buf, 2, false);
+        set_bit(&mut buf, 9, false);
+
+        assert!(!get_bit(&buf, 0));
+        assert!(get_bit(&buf, 1));
+        assert!(!get_bit(&buf, 2));
+        assert!(!get_bit(&buf, 9));
     }
 
     #[test]
