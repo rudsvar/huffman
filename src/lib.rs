@@ -3,6 +3,7 @@ mod huffman_tree;
 use huffman_tree::HuffmanTree;
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::io::{BufRead, BufReader, Read};
 
 /// Encode the given string using Huffman coding,
 /// and return a vector of `u8`.
@@ -51,32 +52,28 @@ pub fn decode(input: &[u8]) -> Option<String> {
         return Some(String::new());
     }
 
-    // Split into header
-    let (a, b) = header_split_locations(input)?;
-    let ht: HuffmanTree = serde_json::from_slice(&input[0..a]).expect("Invalid json");
-    let n_bits: usize = String::from_utf8(input[a + 1..b].to_vec())
-        .expect("Not valid utf8")
+    let mut br = BufReader::new(input);
+
+    // Read serialized Huffman tree
+    let mut ht_str = String::new();
+    br.read_line(&mut ht_str).expect("Could not read json");
+    let ht: HuffmanTree = serde_json::from_str(&ht_str).expect("Invalid json");
+
+    // Read `n_bits`
+    let mut n_bits_str = String::new();
+    br.read_line(&mut n_bits_str)
+        .expect("Could not read n_bits");
+    let n_bits: usize = n_bits_str
+        .trim_end()
         .parse()
         .expect("Invalid number of bits");
-    let encoded = &input[b + 1..];
 
-    Some(ht.decode(encoded, n_bits)?)
-}
+    // Read the encoded data
+    let mut encoded = Vec::new();
+    br.read_to_end(&mut encoded)
+        .expect("Could not read encoded data");
 
-/// Take from the vector until a newline character is reached.
-fn header_split_locations(s: &[u8]) -> Option<(usize, usize)> {
-    let mut locations = Vec::new();
-    for (i, c) in s.iter().enumerate() {
-        if locations.len() == 2 {
-            break;
-        }
-        // Check if it is a line feed
-        if *c == 10 {
-            locations.push(i);
-        }
-    }
-
-    Some((*locations.get(0)?, *locations.get(1)?))
+    Some(ht.decode(&encoded, n_bits)?)
 }
 
 /// Get the frequency of each character in the provided string.

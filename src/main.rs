@@ -1,37 +1,60 @@
 use std::fs;
-use std::io::{self, Read};
+use std::io;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "huffman", about = "Compress files using Huffman encoding")]
-struct Opt {
-    #[structopt(parse(from_os_str))]
-    input_file: PathBuf,
+enum Opt {
+    Encode {
+        #[structopt(parse(from_os_str))]
+        input_file: PathBuf,
 
-    #[structopt(parse(from_os_str))]
-    output_file: PathBuf,
+        #[structopt(parse(from_os_str))]
+        output_file: PathBuf,
+    },
+
+    Decode {
+        #[structopt(parse(from_os_str))]
+        input_file: PathBuf,
+
+        #[structopt(parse(from_os_str))]
+        output_file: PathBuf,
+    },
 }
 
 fn main() -> io::Result<()> {
     let opt = Opt::from_args();
 
-    // Read from file
-    let input = fs::read_to_string(opt.input_file)?;
+    match opt {
+        Opt::Encode {
+            input_file,
+            output_file,
+        } => {
+            // Read from file
+            let input = fs::read_to_string(input_file)?;
 
-    // Encode and write to file
-    let encoded = huffman::encode(&input).unwrap();
-    let output_file = opt.output_file;
-    fs::write(output_file, &encoded)?;
+            // Encode and write to file
+            eprintln!("Encoding");
+            let encoded = huffman::encode(&input).unwrap();
+            eprintln!("Done");
+            fs::write(&output_file, &encoded)?;
+        }
 
-    // Read from file and decode
-    let mut encoded_file = fs::File::open("encoded.txt")?;
-    let mut content = Vec::new();
-    encoded_file.read_to_end(&mut content)?;
+        Opt::Decode {
+            input_file,
+            output_file,
+        } => {
+            // Read from file and decode
+            let input = fs::read(&input_file)?;
 
-    // Decode and verify
-    let decoded = huffman::decode(&encoded).unwrap();
-    assert_eq!(input, decoded);
+            // Decode and verify
+            eprintln!("Decoding");
+            let decoded = huffman::decode(&input).unwrap();
+            eprintln!("Done");
+            fs::write(&output_file, &decoded)?;
+        }
+    }
 
     Ok(())
 }
