@@ -1,7 +1,9 @@
+use bytesize::ByteSize;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
+use std::io::{self, Read, Write};
 
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
@@ -79,7 +81,46 @@ impl HuffmanTree {
                 idx += 1
             }
         }
-        Some((output, idx))
+        Some((output, idx as usize))
+    }
+
+    pub fn encode_to<A, B>(&self, input: &mut A, output: &mut B) -> io::Result<usize>
+    where
+        A: Read,
+        B: Write,
+    {
+        let mut buf = Vec::new();
+        let mut n_bits = 0;
+        let mut idx = 0;
+        let codes = self.codes();
+
+        // Encode bytes
+        for byte in input.bytes() {
+            let c = byte? as char;
+            let code = codes.get(&c).expect("No code found");
+
+            // Add bits to buffer
+            for &c in code {
+                set_bit(&mut buf, idx, c);
+                idx += 1;
+                n_bits += 1;
+            }
+
+            // Write when size is greater than `size`
+            let size: usize = ByteSize::mb(1).as_u64() as usize;
+            if buf.len() > size {
+                let (to_send, to_retain) = buf.split_at(size);
+                output.write_all(to_send)?;
+                buf = Vec::from(to_retain);
+                idx = (buf.len() - 1) * 8;
+                idx += n_bits % 8;
+            }
+        }
+
+        output.write_all(&buf)?;
+        output.flush()?;
+
+        Ok(n_bits)
     }
 
     /// Return a map of the generated encodings
@@ -138,9 +179,9 @@ pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
     }
     let mask = 1 << bit_idx;
     if value {
-        buf[byte_idx] |= mask;
+        buf[byte_idx as usize] |= mask;
     } else {
-        buf[byte_idx] &= !mask;
+        buf[byte_idx as usize] &= !mask;
     }
 }
 

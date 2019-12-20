@@ -1,9 +1,10 @@
 mod huffman_tree;
 
 use huffman_tree::HuffmanTree;
+use log::*;
 use std::collections::HashMap;
-use std::fmt::Write;
-use std::io::{BufRead, BufReader, Read};
+use std::fs;
+use std::io::{self, BufRead, BufReader, BufWriter, Read, Seek, Write};
 
 /// Encode the given string using Huffman coding,
 /// and return a vector of `u8`.
@@ -13,26 +14,66 @@ use std::io::{BufRead, BufReader, Read};
 /// ```
 /// let input = "foo bar baz";
 /// let encoded = huffman::encode(input);
-/// assert!(encoded.is_some());
+/// assert!(encoded.is_ok());
 /// ```
 ///
-pub fn encode(input: &str) -> Option<Vec<u8>> {
+pub fn encode(input: &str) -> io::Result<Vec<u8>> {
     if input.is_empty() {
-        return Some(Vec::new());
+        return Ok(Vec::new());
     }
 
-    let counts = counts(&input);
+    let mut input = io::Cursor::new(input);
+    let mut output = Vec::new();
+    encode_to(&mut input, &mut output)?;
+
+    Ok(output)
+}
+
+pub fn encode_to<A, B>(input: &mut A, output: &mut B) -> io::Result<()>
+where
+    A: io::Read + io::Seek,
+    B: io::Write,
+{
+    let mut input = BufReader::new(input);
+    let mut output = BufWriter::new(output);
+
+    debug!("Counting");
+    // Count character frequencies, then return to start
+    let counts = counts_2(&mut input);
+    input.seek(std::io::SeekFrom::Start(0))?;
+
+    debug!("Constructing tree");
+    // Generate a tree using the counts
     let ht = HuffmanTree::from(&counts);
-    let ht_json = serde_json::to_string(&ht).expect("Could not convert to json");
-    let (mut encoded, n_bits) = ht.encode(&input)?;
+    let ht_json = serde_json::to_string(&ht)?;
 
-    let mut header = String::new();
-    write!(header, "{}\n{}\n", ht_json, n_bits).expect("Could not write to string");
+    debug!("Encode and write to tmp");
+    // Write encoded data to temporary file
+    let tmp_path = mktemp::Temp::new_file()?;
+    let tmp = fs::File::create(&tmp_path)?;
+    let mut tmp = BufWriter::new(tmp);
+    let n_bits = ht.encode_to(&mut input, &mut tmp)?;
 
-    let mut output = Vec::from(header.as_bytes());
-    output.append(&mut encoded);
+    debug!("Write metadata");
+    // Write metadata
+    write!(&mut output, "{}\n{}\n", ht_json, n_bits)?;
 
-    Some(output)
+    debug!("Append encoded data to output");
+    // Append encoded data to output
+    let mut tmp = fs::File::open(&tmp_path)?;
+    io::copy(&mut tmp, &mut output)?;
+
+    Ok(())
+}
+
+/// Get the frequency of each character in the provided string.
+fn counts_2<T: BufRead>(input: &mut T) -> HashMap<char, usize> {
+    let mut cts = HashMap::new();
+    for byte in input.bytes() {
+        let c = byte.unwrap() as char;
+        *cts.entry(c).or_insert(0) += 1;
+    }
+    cts
 }
 
 /// Decode the slice of `u8` that was
@@ -73,7 +114,7 @@ pub fn decode(input: &[u8]) -> Option<String> {
     br.read_to_end(&mut encoded)
         .expect("Could not read encoded data");
 
-    Some(ht.decode(&encoded, n_bits)?)
+    Some(ht.decode(&mut encoded, n_bits)?)
 }
 
 /// Get the frequency of each character in the provided string.
