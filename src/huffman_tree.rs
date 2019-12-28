@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
-use std::io::{self, Read, Write};
+use std::io::{self, BufReader, Read, Write};
 
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
@@ -104,13 +104,12 @@ impl HuffmanTree {
                 let byte_idx = idx / 8;
                 let bit_idx = 7 - idx % 8;
                 let mask = 1 << bit_idx;
-                while !(byte_idx < buf.len()) {
+                while byte_idx >= buf.len() {
                     buf.push(0);
                 }
                 if c {
                     buf[byte_idx] |= mask;
                 }
-                // set_bit(&mut buf, idx, c);
                 idx += 1;
                 n_bits += 1;
             }
@@ -141,7 +140,7 @@ impl HuffmanTree {
 
     fn codes_helper(&self, char_to_code: &mut HashMap<char, Vec<bool>>, path: &mut Vec<bool>) {
         match self {
-            Self::Leaf(c, __) => {
+            Self::Leaf(c, _) => {
                 char_to_code.insert(*c, path.clone());
             }
             Self::Node { zero, one, .. } => {
@@ -153,6 +152,18 @@ impl HuffmanTree {
                 path.pop();
             }
         }
+    }
+
+    pub fn decode_to<A, B>(&self, input: &mut A, output: &mut B) -> io::Result<()>
+    where
+        A: Read,
+        B: Write,
+    {
+        let mut buf = [0; 1000];
+        let idx = 0;
+        input.read_exact(&mut buf)?;
+
+        unimplemented!()
     }
 
     pub fn decode(&self, input: &[u8], n_bits: usize) -> Option<String> {
@@ -169,10 +180,13 @@ impl HuffmanTree {
     fn decode_one(&self, input: &[u8], n_bits: usize, idx: usize) -> Option<(char, usize)> {
         match self {
             Self::Leaf(c, _) => Some((*c, idx)),
-            Self::Node { zero, one, .. } => match get_bit(input, idx) {
-                false => zero.decode_one(input, n_bits, idx + 1),
-                true => one.decode_one(input, n_bits, idx + 1),
-            },
+            Self::Node { zero, one, .. } => {
+                if get_bit(input, idx) {
+                    one.decode_one(input, n_bits, idx + 1)
+                } else {
+                    zero.decode_one(input, n_bits, idx + 1)
+                }
+            }
         }
     }
 }
@@ -183,7 +197,7 @@ impl HuffmanTree {
 pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
     let byte_idx = idx / 8;
     let bit_idx = 7 - idx % 8;
-    while !(byte_idx < buf.len()) {
+    while byte_idx >= buf.len() {
         buf.push(0);
     }
     let mask = 1 << bit_idx;

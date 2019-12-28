@@ -1,4 +1,5 @@
-mod huffman_tree;
+pub mod bit_buffer;
+pub mod huffman_tree;
 
 use huffman_tree::HuffmanTree;
 use log::*;
@@ -75,6 +76,14 @@ fn counts_2<T: BufRead>(input: &mut T) -> HashMap<char, usize> {
         *cts.entry(c).or_insert(0) += 1;
     }
     cts
+}
+
+pub fn decode_to<A, B>(input: &mut A, output: &mut B) -> io::Result<()>
+where
+    A: io::Read + io::Seek,
+    B: io::Write,
+{
+    unimplemented!();
 }
 
 /// Decode the slice of `u8` that was
