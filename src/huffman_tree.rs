@@ -1,9 +1,10 @@
+use crate::bit_helpers;
 use bytesize::ByteSize;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
-use std::io::{self, BufReader, Read, Write};
+use std::io::{self, Read, Write};
 
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
@@ -77,7 +78,7 @@ impl HuffmanTree {
         for chr in input.chars() {
             let code = codes.get(&chr)?;
             for &c in code {
-                set_bit(&mut output, idx, c);
+                bit_helpers::set_bit(&mut output, idx, c);
                 idx += 1
             }
         }
@@ -181,79 +182,12 @@ impl HuffmanTree {
         match self {
             Self::Leaf(c, _) => Some((*c, idx)),
             Self::Node { zero, one, .. } => {
-                if get_bit(input, idx) {
+                if bit_helpers::get_bit(input, idx) {
                     one.decode_one(input, n_bits, idx + 1)
                 } else {
                     zero.decode_one(input, n_bits, idx + 1)
                 }
             }
         }
-    }
-}
-
-/// Set the bit at index `idx`.
-/// The vector will grow as necessary.
-///
-pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
-    let byte_idx = idx / 8;
-    let bit_idx = 7 - idx % 8;
-    while byte_idx >= buf.len() {
-        buf.push(0);
-    }
-    let mask = 1 << bit_idx;
-    if value {
-        buf[byte_idx] |= mask;
-    } else {
-        buf[byte_idx] &= !mask;
-    }
-}
-
-/// Get the bit at index `idx`.
-///
-pub fn get_bit(buf: &[u8], idx: usize) -> bool {
-    let byte_idx = idx / 8;
-    let bit_idx = 7 - idx % 8;
-    (buf[byte_idx] & (1 << bit_idx)) == (1 << bit_idx)
-}
-
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    #[test]
-    fn set_bit_1() {
-        let mut buf = vec![];
-        set_bit(&mut buf, 0, true);
-        set_bit(&mut buf, 2, true);
-        set_bit(&mut buf, 9, true);
-
-        assert!(get_bit(&buf, 0));
-        assert!(!get_bit(&buf, 1));
-        assert!(get_bit(&buf, 2));
-        assert!(get_bit(&buf, 9));
-    }
-
-    #[test]
-    fn set_bit_2() {
-        let mut buf = vec![255];
-        set_bit(&mut buf, 0, false);
-        set_bit(&mut buf, 2, false);
-        set_bit(&mut buf, 9, false);
-
-        assert!(!get_bit(&buf, 0));
-        assert!(get_bit(&buf, 1));
-        assert!(!get_bit(&buf, 2));
-        assert!(!get_bit(&buf, 9));
-    }
-
-    #[test]
-    fn get_bit_test() {
-        let buf = vec![5];
-
-        assert!(get_bit(&buf, 7));
-        assert!(!get_bit(&buf, 6));
-        assert!(get_bit(&buf, 5));
-        assert!(!get_bit(&buf, 4));
     }
 }
