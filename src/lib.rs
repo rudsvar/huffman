@@ -1,4 +1,6 @@
 pub mod bit_buffer;
+mod bit_helpers;
+pub mod biterator;
 pub mod huffman_tree;
 
 use huffman_tree::HuffmanTree;

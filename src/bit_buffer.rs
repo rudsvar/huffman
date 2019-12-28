@@ -1,13 +1,12 @@
 //! A module defining a buffer that can store bits.
 //! This removes the need for manual bit-fiddling.
 
-use std::io::{Read, Write};
+use crate::bit_helpers;
 
 /// The size of the internal bit-buffer.
 const BUF_SIZE: usize = 10;
 
 /// A struct containing the internal bit-buffer.
-#[derive(Default)]
 pub struct BitBuffer {
     buffer: [u8; BUF_SIZE],
     pos: usize,
@@ -15,6 +14,8 @@ pub struct BitBuffer {
 }
 
 impl BitBuffer {
+    /// Construct a new `BitBuffer` which will read from the source
+    /// `src` and write to the destination `dst`.
     pub fn new() -> BitBuffer {
         BitBuffer {
             buffer: [0; BUF_SIZE],
@@ -33,28 +34,9 @@ impl BitBuffer {
         self.len() == 0
     }
 
-    /// Set the specified bit to the given value.
-    pub fn set_bit(&mut self, idx: usize, value: bool) {
-        let (byte_idx, bit_idx) = byte_bit_idx(idx);
-        let mask = 1 << bit_idx;
-        if value {
-            self.buffer[byte_idx] |= mask;
-        } else {
-            self.buffer[byte_idx] &= !mask;
-        }
-        eprintln!("len {}: {:08b}", self.len(), self.buffer[byte_idx]);
-    }
-
-    /// Read the bit at the given location.
-    pub fn get_bit(&self, idx: usize) -> bool {
-        let (byte_idx, bit_idx) = byte_bit_idx(idx);
-        let mask = 1 << bit_idx;
-        self.buffer[byte_idx] & mask == mask
-    }
-
     /// Push a new value into the buffer.
     pub fn push(&mut self, value: bool) {
-        self.set_bit(self.length, value);
+        bit_helpers::set_bit(&mut self.buffer, self.length, value);
         self.length += 1;
     }
 
@@ -65,7 +47,7 @@ impl BitBuffer {
         }
 
         self.length -= 1;
-        let value = self.get_bit(self.length);
+        let value = bit_helpers::get_bit(&self.buffer, self.length);
         Some(value)
     }
 }
@@ -78,17 +60,10 @@ impl Iterator for BitBuffer {
             return None;
         }
 
-        let value = self.get_bit(self.pos);
+        let value = bit_helpers::get_bit(&self.buffer, self.pos);
         self.pos += 1;
         Some(value)
     }
-}
-
-/// Convert the index to byte- and bit-index.
-fn byte_bit_idx(idx: usize) -> (usize, usize) {
-    let byte_idx = idx / 8;
-    let bit_idx = 7 - idx % 8;
-    (byte_idx, bit_idx)
 }
 
 #[cfg(test)]
