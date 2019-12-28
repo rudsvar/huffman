@@ -62,6 +62,7 @@ where
     // Append encoded data to output
     let mut tmp = fs::File::open(&tmp_path)?;
     io::copy(&mut tmp, &mut output)?;
+    debug!("Done");
 
     Ok(())
 }

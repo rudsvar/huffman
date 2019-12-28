@@ -81,7 +81,7 @@ impl HuffmanTree {
                 idx += 1
             }
         }
-        Some((output, idx as usize))
+        Some((output, idx))
     }
 
     pub fn encode_to<A, B>(&self, input: &mut A, output: &mut B) -> io::Result<usize>
@@ -101,13 +101,22 @@ impl HuffmanTree {
 
             // Add bits to buffer
             for &c in code {
-                set_bit(&mut buf, idx, c);
+                let byte_idx = idx / 8;
+                let bit_idx = 7 - idx % 8;
+                let mask = 1 << bit_idx;
+                while !(byte_idx < buf.len()) {
+                    buf.push(0);
+                }
+                if c {
+                    buf[byte_idx] |= mask;
+                }
+                // set_bit(&mut buf, idx, c);
                 idx += 1;
                 n_bits += 1;
             }
 
             // Write when size is greater than `size`
-            let size: usize = ByteSize::mb(1).as_u64() as usize;
+            let size: usize = ByteSize::mb(2).as_u64() as usize;
             if buf.len() > size {
                 let (to_send, to_retain) = buf.split_at(size);
                 output.write_all(to_send)?;
@@ -179,9 +188,9 @@ pub fn set_bit(buf: &mut Vec<u8>, idx: usize, value: bool) {
     }
     let mask = 1 << bit_idx;
     if value {
-        buf[byte_idx as usize] |= mask;
+        buf[byte_idx] |= mask;
     } else {
-        buf[byte_idx as usize] &= !mask;
+        buf[byte_idx] &= !mask;
     }
 }
 
