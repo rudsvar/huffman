@@ -42,7 +42,7 @@ where
 
     debug!("Counting");
     // Count character frequencies, then return to start
-    let counts = counts_2(&mut input);
+    let counts = counts(&mut input);
     input.seek(std::io::SeekFrom::Start(0))?;
 
     debug!("Constructing tree");
@@ -71,7 +71,7 @@ where
 }
 
 /// Get the frequency of each character in the provided string.
-fn counts_2<T: BufRead>(input: &mut T) -> HashMap<char, usize> {
+fn counts<T: BufRead>(input: &mut T) -> HashMap<char, usize> {
     let mut cts = HashMap::new();
     for byte in input.bytes() {
         let c = byte.unwrap() as char;
@@ -85,7 +85,28 @@ where
     A: io::Read + io::Seek,
     B: io::Write,
 {
-    unimplemented!();
+    let mut input = BufReader::new(input);
+    let mut output = BufWriter::new(output);
+
+    // Read serialized Huffman tree
+    let mut ht_str = String::new();
+    input.read_line(&mut ht_str).expect("Could not read json");
+    let ht: HuffmanTree = serde_json::from_str(&ht_str).expect("Invalid json");
+
+    // Read `n_bits`
+    let mut n_bits_str = String::new();
+    input
+        .read_line(&mut n_bits_str)
+        .expect("Could not read n_bits");
+    let n_bits: usize = n_bits_str
+        .trim_end()
+        .parse()
+        .expect("Invalid number of bits");
+
+    // Read the encoded data
+    ht.decode_to(&mut input, &mut output, n_bits)?;
+
+    Ok(())
 }
 
 /// Decode the slice of `u8` that was
@@ -100,52 +121,27 @@ where
 /// assert_eq!(input, decoded);
 /// ```
 ///
-pub fn decode(input: &[u8]) -> Option<String> {
+pub fn decode(input: &[u8]) -> io::Result<String> {
     if input.is_empty() {
-        return Some(String::new());
+        return Ok(String::new());
     }
 
-    let mut br = BufReader::new(input);
+    let mut input = io::Cursor::new(input);
+    let mut output = Vec::new();
+    decode_to(&mut input, &mut output)?;
 
-    // Read serialized Huffman tree
-    let mut ht_str = String::new();
-    br.read_line(&mut ht_str).expect("Could not read json");
-    let ht: HuffmanTree = serde_json::from_str(&ht_str).expect("Invalid json");
-
-    // Read `n_bits`
-    let mut n_bits_str = String::new();
-    br.read_line(&mut n_bits_str)
-        .expect("Could not read n_bits");
-    let n_bits: usize = n_bits_str
-        .trim_end()
-        .parse()
-        .expect("Invalid number of bits");
-
-    // Read the encoded data
-    let mut encoded = Vec::new();
-    br.read_to_end(&mut encoded)
-        .expect("Could not read encoded data");
-
-    Some(ht.decode(&mut encoded, n_bits)?)
-}
-
-/// Get the frequency of each character in the provided string.
-fn counts(input: &str) -> HashMap<char, usize> {
-    let mut cts = HashMap::new();
-    for c in input.chars() {
-        *cts.entry(c).or_insert(0) += 1;
-    }
-    cts
+    Ok(String::from_utf8_lossy(&output).to_string())
 }
 
 #[cfg(test)]
 mod tests {
 
     use super::*;
+    use std::io::Cursor;
 
     #[test]
     fn counts_test() {
-        let cts = counts("aaabbc\n");
+        let cts = counts(&mut BufReader::new(Cursor::new("aaabbc\n")));
         assert_eq!(cts.get(&'a'), Some(&3));
         assert_eq!(cts.get(&'b'), Some(&2));
         assert_eq!(cts.get(&'c'), Some(&1));

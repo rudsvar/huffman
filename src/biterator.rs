@@ -1,10 +1,10 @@
 use crate::bit_helpers;
-use std::io::{self, Read};
+use std::io::Read;
 
 /// The size of the internal bit-buffer.
-const BUF_SIZE: usize = 10;
+const BUF_SIZE: usize = 2048;
 
-struct Biterator<'a> {
+pub struct Biterator<'a> {
     buffer: [u8; BUF_SIZE],
     length: usize,
     pos: usize,
@@ -27,8 +27,8 @@ impl<'a> Biterator<'a> {
 impl<'a> Iterator for Biterator<'a> {
     type Item = bool;
     fn next(&mut self) -> Option<Self::Item> {
+        // If we run out of data, read more
         if self.pos == self.length {
-            eprintln!("No bits left, reading more");
             match self.source.read(&mut self.buffer) {
                 Err(e) => panic!(e),
                 Ok(0) => return None,
@@ -37,7 +37,6 @@ impl<'a> Iterator for Biterator<'a> {
                     self.pos = 0;
                 }
             }
-            eprintln!("Read {} bytes", self.length);
             self.pos = 0;
 
             if self.length == 0 {

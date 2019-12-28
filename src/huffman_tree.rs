@@ -6,6 +6,8 @@ use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 
+use crate::biterator::Biterator;
+
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
     Node {
@@ -155,16 +157,38 @@ impl HuffmanTree {
         }
     }
 
-    pub fn decode_to<A, B>(&self, input: &mut A, output: &mut B) -> io::Result<()>
+    pub fn decode_to<A, B>(&self, input: &mut A, output: &mut B, n_bits: usize) -> io::Result<()>
     where
         A: Read,
         B: Write,
     {
-        let mut buf = [0; 1000];
-        let idx = 0;
-        input.read_exact(&mut buf)?;
+        let mut bits_read = 0;
+        let mut biterator = Biterator::new(input);
+        while let Some((c, count)) = self.decode_one_to(&mut biterator, 0) {
+            output.write_all(&[c as u8])?;
+            bits_read += count;
+            if bits_read >= n_bits {
+                break;
+            }
+        }
 
-        unimplemented!()
+        Ok(())
+    }
+
+    pub fn decode_one_to<A>(&self, input: &mut A, bits_read: usize) -> Option<(char, usize)>
+    where
+        A: Iterator<Item = bool>,
+    {
+        match self {
+            Self::Leaf(c, _) => Some((*c, bits_read)),
+            Self::Node { zero, one, .. } => {
+                if input.next()? {
+                    one.decode_one_to(input, bits_read + 1)
+                } else {
+                    zero.decode_one_to(input, bits_read + 1)
+                }
+            }
+        }
     }
 
     pub fn decode(&self, input: &[u8], n_bits: usize) -> Option<String> {
