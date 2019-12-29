@@ -1,13 +1,16 @@
-//! A module defining a buffer for pushing bits into,
-//! which will then be flushed to the destination.
-
 use crate::bits;
 use std::io::{self, Write};
 
 /// The size of the internal bit-buffer.
 const BUF_SIZE: usize = 2048;
 
-/// A struct containing the internal bit-buffer.
+/// A struct for writing bits to a `Write`.
+///
+/// After constructing one with a given destination,
+/// one can push bits into it that will be written to
+/// the destination when the buffer is full.
+///
+/// Remember to call `flush` after pushing all bits.
 pub struct BitWriter<'a> {
     buffer: [u8; BUF_SIZE],
     pos: usize,

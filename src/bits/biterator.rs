@@ -4,6 +4,10 @@ use std::io::Read;
 /// The size of the internal bit-buffer.
 const BUF_SIZE: usize = 2048;
 
+/// A struct for reading bits from a `Read`.
+///
+/// The `Biterator` wraps anything with `impl Read`, and
+/// allows the user to iterate over the the bits it contains.
 pub struct Biterator<'a> {
     buffer: [u8; BUF_SIZE],
     length: usize,

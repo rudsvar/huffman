@@ -6,7 +6,7 @@ fn byte_idx_and_mask(idx: usize) -> (usize, u8) {
     (byte_idx, mask)
 }
 
-/// Set the specified bit to the given value.
+/// Set the bit at `idx` to the given value.
 pub fn set_bit(buf: &mut [u8], idx: usize, value: bool) {
     let (byte_idx, mask) = byte_idx_and_mask(idx);
     if value {
@@ -16,7 +16,7 @@ pub fn set_bit(buf: &mut [u8], idx: usize, value: bool) {
     }
 }
 
-/// Read the bit at the given location.
+/// Read the bit at `idx`.
 pub fn get_bit(buf: &[u8], idx: usize) -> bool {
     let (byte_idx, mask) = byte_idx_and_mask(idx);
     buf[byte_idx] & mask == mask

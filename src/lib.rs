@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Seek, Write};
 
-/// Encode the given string using Huffman coding,
-/// and return a vector of `u8`.
+/// A wrapper function that encodes a string
+/// and returns a vector of encoded data.
 ///
 /// # Examples
 ///
@@ -30,6 +30,12 @@ pub fn encode(input: &str) -> io::Result<Vec<u8>> {
     Ok(output)
 }
 
+/// A memory efficient function for encoding.
+///
+/// This function will read from the input as necessary, and
+/// write continuously to the output rather than load
+/// it all into memory.
+///
 pub fn encode_to<A, B>(input: &mut A, output: &mut B) -> io::Result<()>
 where
     A: io::Read + io::Seek,
@@ -79,6 +85,12 @@ fn counts<T: BufRead>(input: &mut T) -> HashMap<char, usize> {
     cts
 }
 
+/// A memory efficient function for decoding.
+///
+/// This function will read from the input as necessary, and
+/// write continuously to the output rather than load
+/// it all into memory.
+///
 pub fn decode_to<A, B>(input: &mut A, output: &mut B) -> io::Result<()>
 where
     A: io::Read + io::Seek,
@@ -108,8 +120,11 @@ where
     Ok(())
 }
 
-/// Decode the slice of `u8` that was
-/// produced by `huffman::encode`.
+/// A wrapper function for decoding.
+///
+/// This function decodes data produced by `encode`.
+/// Given a slice of `u8`, it will decode it if possible,
+/// and return the decoded string.
 ///
 /// # Examples
 ///

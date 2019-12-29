@@ -6,18 +6,23 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "huffman", about = "Compress files using Huffman encoding")]
 struct Opt {
+    /// The file to read from
     #[structopt(parse(from_os_str))]
     input_file: PathBuf,
 
+    /// The file to write to
     #[structopt(parse(from_os_str))]
     output_file: PathBuf,
 
+    /// Decode a file instead
     #[structopt(short, long)]
     decode: bool,
 
+    /// Suppresses all output
     #[structopt(short, long)]
     quiet: bool,
 
+    /// Select how much debug information to print
     #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: usize,
 }

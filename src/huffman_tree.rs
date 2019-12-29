@@ -1,3 +1,9 @@
+//! A module that defining a `HuffmanTree`.
+//!
+//! The Huffman tree is constructed using Huffman encoding,
+//! and is used to get the encoding of a given character.
+//! It can then also be used to decode encoded data.
+
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::BinaryHeap;
@@ -6,6 +12,7 @@ use std::io::{self, Read, Write};
 
 use crate::bits::{self, BitWriter, Biterator};
 
+/// The struct representing the Huffman tree.
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
     Node {
@@ -29,6 +36,9 @@ impl PartialOrd for HuffmanTree {
 }
 
 impl HuffmanTree {
+    /// Get the weight of the tree.
+    ///
+    /// This is used during construction.
     pub fn weight(&self) -> usize {
         match self {
             Self::Node { weight, .. } => *weight,
@@ -36,6 +46,7 @@ impl HuffmanTree {
         }
     }
 
+    /// Construct a `HuffmanTree` from character frequencies.
     pub fn from(counts: &HashMap<char, usize>) -> HuffmanTree {
         let mut trees: BinaryHeap<HuffmanTree> = BinaryHeap::new();
 
@@ -71,20 +82,7 @@ impl HuffmanTree {
         }
     }
 
-    pub fn encode(&self, input: &str) -> Option<(Vec<u8>, usize)> {
-        let mut output = Vec::new();
-        let mut idx = 0;
-        let codes = self.codes();
-        for chr in input.chars() {
-            let code = codes.get(&chr)?;
-            for &c in code {
-                bits::set_bit(&mut output, idx, c);
-                idx += 1
-            }
-        }
-        Some((output, idx))
-    }
-
+    /// Encode data from `input` and write it to `output`.
     pub fn encode_to<A, B>(&self, input: &mut A, output: &mut B) -> io::Result<usize>
     where
         A: Read,
@@ -135,6 +133,7 @@ impl HuffmanTree {
         }
     }
 
+    /// Decode data from `input` and write it to `output`.
     pub fn decode_to<A, B>(&self, input: &mut A, output: &mut B, n_bits: usize) -> io::Result<()>
     where
         A: Read,
@@ -154,7 +153,8 @@ impl HuffmanTree {
         Ok(())
     }
 
-    pub fn decode_one_to<A>(&self, input: &mut A, bits_read: usize) -> Option<(char, usize)>
+    /// Decode a single character from `input`.
+    fn decode_one_to<A>(&self, input: &mut A, bits_read: usize) -> Option<(char, usize)>
     where
         A: Iterator<Item = bool>,
     {
@@ -165,30 +165,6 @@ impl HuffmanTree {
                     one.decode_one_to(input, bits_read + 1)
                 } else {
                     zero.decode_one_to(input, bits_read + 1)
-                }
-            }
-        }
-    }
-
-    pub fn decode(&self, input: &[u8], n_bits: usize) -> Option<String> {
-        let mut res = String::new();
-        let mut idx = 0;
-        while idx < n_bits {
-            let (c, new_idx) = self.decode_one(input, n_bits, idx)?;
-            idx = new_idx;
-            res.push(c);
-        }
-        Some(res)
-    }
-
-    fn decode_one(&self, input: &[u8], n_bits: usize, idx: usize) -> Option<(char, usize)> {
-        match self {
-            Self::Leaf(c, _) => Some((*c, idx)),
-            Self::Node { zero, one, .. } => {
-                if bits::get_bit(input, idx) {
-                    one.decode_one(input, n_bits, idx + 1)
-                } else {
-                    zero.decode_one(input, n_bits, idx + 1)
                 }
             }
         }
