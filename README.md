@@ -1,5 +1,7 @@
 # Description
 
+[![Build Status](https://travis-ci.org/rudsvar/huffman.svg?branch=master)](https://travis-ci.org/rudsvar/huffman)
+
 This project lets you compress files using Huffman encoding.
 The compression rate is not too bad, but it is not very fast.
 Something like `zip` or `gzip` is currently a lot faster.
