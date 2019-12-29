@@ -14,6 +14,10 @@ cargo build --release
 
 Check out `huffman --help` for more information.
 
+## Documentation
+
+If you are interested in checking out the library, then check out the documentation [here](doc/huffman/index.html).
+
 ## Huffman Encoding
 
 Here is a short explanation of how it works.
