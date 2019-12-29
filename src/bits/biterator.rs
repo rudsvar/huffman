@@ -1,4 +1,4 @@
-use crate::bit_helpers;
+use crate::bits;
 use std::io::Read;
 
 /// The size of the internal bit-buffer.
@@ -44,7 +44,7 @@ impl<'a> Iterator for Biterator<'a> {
             }
         }
 
-        let bit = bit_helpers::get_bit(&self.buffer, self.pos);
+        let bit = bits::get_bit(&self.buffer, self.pos);
         self.pos += 1;
 
         Some(bit)

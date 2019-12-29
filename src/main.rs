@@ -3,26 +3,6 @@ use std::io;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-// #[derive(Debug, StructOpt)]
-// #[structopt(name = "huffman", about = "Compress files using Huffman encoding")]
-// enum Opt {
-//     Encode {
-//         #[structopt(parse(from_os_str))]
-//         input_file: PathBuf,
-
-//         #[structopt(parse(from_os_str))]
-//         output_file: PathBuf,
-//     },
-
-//     Decode {
-//         #[structopt(parse(from_os_str))]
-//         input_file: PathBuf,
-
-//         #[structopt(parse(from_os_str))]
-//         output_file: PathBuf,
-//     },
-// }
-
 #[derive(Debug, StructOpt)]
 #[structopt(name = "huffman", about = "Compress files using Huffman encoding")]
 struct Opt {
@@ -53,26 +33,13 @@ fn main() -> io::Result<()> {
         .init()
         .unwrap();
 
-    if !opt.decode {
-        // Encode
-        let mut input = fs::File::open(&opt.input_file)?;
-        let mut output = fs::File::create(&opt.output_file)?;
-        huffman::encode_to(&mut input, &mut output)?;
+    let mut input = fs::File::open(&opt.input_file)?;
+    let mut output = fs::File::create(&opt.output_file)?;
 
-    // // Read from file
-    // let input = fs::read_to_string(&opt.input_file)?;
-
-    // // Encode and write to file
-    // let encoded = huffman::encode(&input).unwrap();
-    // fs::write(&opt.output_file, &encoded)?;
+    if opt.decode {
+        huffman::decode_to(&mut input, &mut output)?;
     } else {
-        // Decode
-        // Read from file and decode
-        let input = fs::read(&opt.input_file)?;
-
-        // Decode and verify
-        let decoded = huffman::decode(&input).unwrap();
-        fs::write(&opt.output_file, &decoded)?;
+        huffman::encode_to(&mut input, &mut output)?;
     }
 
     Ok(())

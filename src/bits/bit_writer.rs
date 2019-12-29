@@ -1,24 +1,24 @@
 //! A module defining a buffer for pushing bits into,
 //! which will then be flushed to the destination.
 
-use crate::bit_helpers;
+use crate::bits;
 use std::io::{self, Write};
 
 /// The size of the internal bit-buffer.
 const BUF_SIZE: usize = 2048;
 
 /// A struct containing the internal bit-buffer.
-pub struct BitBuffer<'a> {
+pub struct BitWriter<'a> {
     buffer: [u8; BUF_SIZE],
     pos: usize,
     dst: &'a mut dyn Write,
 }
 
-impl<'a> BitBuffer<'a> {
-    /// Construct a new `BitBuffer` which will read from the source
+impl<'a> BitWriter<'a> {
+    /// Construct a new `BitWriter` which will read from the source
     /// `src` and write to the destination `dst`.
-    pub fn new(dst: &'a mut dyn Write) -> BitBuffer<'a> {
-        BitBuffer {
+    pub fn new(dst: &'a mut dyn Write) -> BitWriter<'a> {
+        BitWriter {
             buffer: [0; BUF_SIZE],
             pos: 0,
             dst,
@@ -28,7 +28,7 @@ impl<'a> BitBuffer<'a> {
     /// Push a new value into the buffer.
     pub fn push(&mut self, value: bool) -> io::Result<()> {
         // Set bit and increment position
-        bit_helpers::set_bit(&mut self.buffer, self.pos, value);
+        bits::set_bit(&mut self.buffer, self.pos, value);
         self.pos += 1;
 
         // Flush buffer when full
@@ -60,7 +60,7 @@ mod tests {
     fn writes_expected() {
         // Create buffer and output vector
         let mut output = vec![];
-        let mut buf = BitBuffer::new(&mut output);
+        let mut buf = BitWriter::new(&mut output);
         let input: Vec<bool> = [
             [false, false, true, false, true, false, false, true],
             [false, false, false, false, false, true, false, true],

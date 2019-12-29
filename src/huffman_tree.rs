@@ -1,12 +1,10 @@
-use crate::bit_helpers;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 
-use crate::bit_buffer::BitBuffer;
-use crate::biterator::Biterator;
+use crate::bits::{self, BitWriter, Biterator};
 
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum HuffmanTree {
@@ -80,7 +78,7 @@ impl HuffmanTree {
         for chr in input.chars() {
             let code = codes.get(&chr)?;
             for &c in code {
-                bit_helpers::set_bit(&mut output, idx, c);
+                bits::set_bit(&mut output, idx, c);
                 idx += 1
             }
         }
@@ -95,7 +93,7 @@ impl HuffmanTree {
         let mut n_bits = 0;
         let codes = self.codes();
 
-        let mut buf = BitBuffer::new(output);
+        let mut buf = BitWriter::new(output);
 
         // Encode bytes
         for byte in input.bytes() {
@@ -187,7 +185,7 @@ impl HuffmanTree {
         match self {
             Self::Leaf(c, _) => Some((*c, idx)),
             Self::Node { zero, one, .. } => {
-                if bit_helpers::get_bit(input, idx) {
+                if bits::get_bit(input, idx) {
                     one.decode_one(input, n_bits, idx + 1)
                 } else {
                     zero.decode_one(input, n_bits, idx + 1)
