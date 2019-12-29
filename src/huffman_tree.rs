@@ -10,7 +10,7 @@ use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 
-use crate::bits::{self, BitWriter, Biterator};
+use crate::bits::{BitWriter, Biterator};
 
 /// The struct representing the Huffman tree.
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
