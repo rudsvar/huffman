@@ -1,26 +1,24 @@
-# Huffman
+# Description
 
-Compress files using Huffman encoding.
+This project lets you compress files using Huffman encoding.
+The compression rate is not too bad, but it is not very fast.
+Something like `zip` or `gzip` is currently a lot faster.
+I do not recommend using this for anything serious.
+
+The documentation for the library can be found [here](doc/huffman/index.html).
 
 ## Building
 
 The project can be built as expected using cargo.
-
-```
-cargo build --release
-```
+See `cargo --help` for more information.
 
 ## Usage
 
 Check out `huffman --help` for more information.
 
-## Documentation
-
-If you are interested in checking out the library, then check out the documentation [here](doc/huffman/index.html).
-
 ## Huffman Encoding
 
-Here is a short explanation of how it works.
+Here is a short explanation of how Huffman encoding works.
 
 Given the string `aaaaabbbc`, we have the following character frequencies:
 
