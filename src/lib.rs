@@ -56,6 +56,7 @@ where
     let tmp = fs::File::create(&tmp_path)?;
     let mut tmp = BufWriter::new(tmp);
     let n_bits = ht.encode_to(&mut input, &mut tmp)?;
+    tmp.flush()?;
 
     debug!("Write metadata");
     // Write metadata
@@ -153,7 +154,7 @@ mod tests {
         let input = String::from(input);
         let encoded = encode(&input).unwrap();
         let decoded = decode(&encoded).unwrap();
-        assert_eq!(input, decoded);
+        assert_eq!(decoded, input);
     }
 
     #[test]
