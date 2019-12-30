@@ -1,4 +1,4 @@
-//! A module that defining a `HuffmanTree`.
+//! A module that defines a `HuffmanTree`.
 //!
 //! The Huffman tree is constructed using Huffman encoding,
 //! and is used to get the encoding of a given character.
