@@ -20,7 +20,7 @@ pub enum HuffmanTree {
         zero: Box<HuffmanTree>,
         one: Box<HuffmanTree>,
     },
-    Leaf(char, usize),
+    Leaf(u8, usize),
 }
 
 impl<'a> Ord for HuffmanTree {
@@ -47,7 +47,7 @@ impl HuffmanTree {
     }
 
     /// Construct a `HuffmanTree` from character frequencies.
-    pub fn from(counts: &HashMap<char, usize>) -> HuffmanTree {
+    pub fn from(counts: &HashMap<u8, usize>) -> HuffmanTree {
         let mut trees: BinaryHeap<HuffmanTree> = BinaryHeap::new();
 
         // If there is only one character, a special tree is made.
@@ -95,8 +95,7 @@ impl HuffmanTree {
 
         // Encode bytes
         for byte in input.bytes() {
-            let c = byte? as char;
-            let code = codes.get(&c).expect("No code found");
+            let code = codes.get(&byte?).expect("No code found");
 
             // Add bits to buffer
             for &b in code {
@@ -111,13 +110,13 @@ impl HuffmanTree {
     }
 
     /// Return a map of the generated encodings
-    pub fn codes(&self) -> HashMap<char, Vec<bool>> {
+    pub fn codes(&self) -> HashMap<u8, Vec<bool>> {
         let mut char_to_code = HashMap::new();
         self.codes_helper(&mut char_to_code, &mut Vec::new());
         char_to_code
     }
 
-    fn codes_helper(&self, char_to_code: &mut HashMap<char, Vec<bool>>, path: &mut Vec<bool>) {
+    fn codes_helper(&self, char_to_code: &mut HashMap<u8, Vec<bool>>, path: &mut Vec<bool>) {
         match self {
             Self::Leaf(c, _) => {
                 char_to_code.insert(*c, path.clone());
@@ -154,7 +153,7 @@ impl HuffmanTree {
     }
 
     /// Decode a single character from `input`.
-    fn decode_one_to<A>(&self, input: &mut A, bits_read: usize) -> Option<(char, usize)>
+    fn decode_one_to<A>(&self, input: &mut A, bits_read: usize) -> Option<(u8, usize)>
     where
         A: Iterator<Item = bool>,
     {

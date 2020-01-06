@@ -75,11 +75,11 @@ where
     Ok(())
 }
 
-/// Get the frequency of each character in the provided string.
-fn counts<T: BufRead>(input: &mut T) -> HashMap<char, usize> {
+/// Get the frequency of each byte in the provided input.
+fn counts<T: BufRead>(input: &mut T) -> HashMap<u8, usize> {
     let mut cts = HashMap::new();
     for byte in input.bytes() {
-        let c = byte.unwrap() as char;
+        let c = byte.unwrap();
         *cts.entry(c).or_insert(0) += 1;
     }
     cts
@@ -155,12 +155,12 @@ mod tests {
 
     #[test]
     fn counts_test() {
-        let cts = counts(&mut BufReader::new(Cursor::new("aaabbc\n")));
-        assert_eq!(cts.get(&'a'), Some(&3));
-        assert_eq!(cts.get(&'b'), Some(&2));
-        assert_eq!(cts.get(&'c'), Some(&1));
-        assert_eq!(cts.get(&'\n'), Some(&1));
-        assert_eq!(cts.get(&'x'), None);
+        let cts = counts(&mut BufReader::new(Cursor::new(b"aaabbc\n")));
+        assert_eq!(cts.get(&b'a'), Some(&3));
+        assert_eq!(cts.get(&b'b'), Some(&2));
+        assert_eq!(cts.get(&b'c'), Some(&1));
+        assert_eq!(cts.get(&b'\n'), Some(&1));
+        assert_eq!(cts.get(&b'x'), None);
     }
 
     fn encode_decode(input: &str) {
