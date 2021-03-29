@@ -14,7 +14,7 @@ stderrlog = "0.5.1"
 
 [dev-dependencies]
 rand = "0.8.3"
-criterion = "0.3.4"
+criterion = { version = "0.3.4", features = [ "html_reports" ] }
 
 [[bench]]
 name = "criterion"
