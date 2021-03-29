@@ -47,22 +47,29 @@ impl HuffmanTree {
     }
 
     /// Construct a `HuffmanTree` from character frequencies.
-    pub fn from(counts: &HashMap<u8, usize>) -> HuffmanTree {
+    pub fn from(counts: &[usize; u8::MAX as usize]) -> HuffmanTree {
         let mut trees: BinaryHeap<HuffmanTree> = BinaryHeap::new();
 
         // If there is only one character, a special tree is made.
-        if counts.len() == 1 {
-            let (&k, &v) = counts.iter().next().unwrap();
+        if counts.iter().filter(|&x| *x > 0).count() == 1 {
+            let (k, &v) = counts
+                .iter()
+                .enumerate()
+                .find(|(_, &x)| x > 0)
+                .expect("Should be one byte with high enough count");
             return HuffmanTree::Node {
-                zero: Box::new(HuffmanTree::Leaf(k, v)),
-                one: Box::new(HuffmanTree::Leaf(k, v)),
+                zero: Box::new(HuffmanTree::Leaf(k as u8, v)),
+                one: Box::new(HuffmanTree::Leaf(k as u8, v)),
                 weight: v,
             };
         }
 
         // Add the initial trees.
-        for (k, v) in counts {
-            trees.push(Self::Leaf(*k, *v));
+        for (k, v) in counts.iter().enumerate() {
+            // Only add characters that are actually used
+            if *v != 0 {
+                trees.push(Self::Leaf(k as u8, *v));
+            }
         }
 
         // Construct the complete tree.

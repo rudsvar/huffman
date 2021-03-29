@@ -3,7 +3,6 @@ pub mod huffman_tree;
 
 use huffman_tree::HuffmanTree;
 use log::*;
-use std::collections::HashMap;
 use std::fs;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Seek, Write};
 
@@ -76,11 +75,11 @@ where
 }
 
 /// Get the frequency of each byte in the provided input.
-fn counts<T: BufRead>(input: &mut T) -> HashMap<u8, usize> {
-    let mut cts = HashMap::new();
+fn counts<T: BufRead>(input: &mut T) -> [usize; u8::MAX as usize] {
+    let mut cts = [0; u8::MAX as usize];
     for byte in input.bytes() {
         let c = byte.unwrap();
-        *cts.entry(c).or_insert(0) += 1;
+        cts[c as usize] += 1;
     }
     cts
 }
@@ -156,17 +155,20 @@ mod tests {
     #[test]
     fn counts_test() {
         let cts = counts(&mut BufReader::new(Cursor::new(b"aaabbc\n")));
-        assert_eq!(cts.get(&b'a'), Some(&3));
-        assert_eq!(cts.get(&b'b'), Some(&2));
-        assert_eq!(cts.get(&b'c'), Some(&1));
-        assert_eq!(cts.get(&b'\n'), Some(&1));
-        assert_eq!(cts.get(&b'x'), None);
+        assert_eq!(cts[b'a' as usize], 3);
+        assert_eq!(cts[b'b' as usize], 2);
+        assert_eq!(cts[b'c' as usize], 1);
+        assert_eq!(cts[b'\n' as usize], 1);
+        assert_eq!(cts[b'x' as usize], 0);
     }
 
     fn encode_decode(input: &str) {
         let input = String::from(input);
+        println!("Input: {}", input);
         let encoded = encode(&input).unwrap();
+        println!("Encoded: {:?}", encoded);
         let decoded = decode(&encoded).unwrap();
+        println!("Decoded: {}", decoded);
         assert_eq!(decoded, input);
     }
 
