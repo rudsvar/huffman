@@ -7,7 +7,6 @@
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::BinaryHeap;
-use std::collections::HashMap;
 use std::io::{self, Read, Write};
 
 use crate::bits::{BitWriter, Biterator};
@@ -102,7 +101,7 @@ impl HuffmanTree {
 
         // Encode bytes
         for byte in input.bytes() {
-            let code = codes.get(&byte?).expect("No code found");
+            let code = &codes[byte? as usize];
 
             // Add bits to buffer
             for &b in code {
@@ -117,16 +116,16 @@ impl HuffmanTree {
     }
 
     /// Return a map of the generated encodings
-    pub fn codes(&self) -> HashMap<u8, Vec<bool>> {
-        let mut char_to_code = HashMap::new();
+    pub fn codes(&self) -> Vec<Vec<bool>> {
+        let mut char_to_code = vec![Vec::new(); u8::MAX as usize];
         self.codes_helper(&mut char_to_code, &mut Vec::new());
         char_to_code
     }
 
-    fn codes_helper(&self, char_to_code: &mut HashMap<u8, Vec<bool>>, path: &mut Vec<bool>) {
+    fn codes_helper(&self, char_to_code: &mut Vec<Vec<bool>>, path: &mut Vec<bool>) {
         match self {
             Self::Leaf(c, _) => {
-                char_to_code.insert(*c, path.clone());
+                char_to_code[*c as usize] = path.clone();
             }
             Self::Node { zero, one, .. } => {
                 path.push(false);
