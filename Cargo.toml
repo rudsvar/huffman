@@ -12,5 +12,14 @@ mktemp = "0.4.1"
 log = "0.4"
 stderrlog = "0.5.1"
 
+[dev-dependencies]
+rand = "0.8.3"
+criterion = "0.3.4"
+
+[[bench]]
+name = "criterion"
+harness = false
+
+# For flamegraph
 [profile.release]
 debug = true
