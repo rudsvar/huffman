@@ -11,15 +11,17 @@ fn random_string(length: usize) -> String {
 
 const INPUT_SIZE: usize = 100_000;
 
-fn encoding_benchmark(c: &mut Criterion) {
-    let random_string = random_string(INPUT_SIZE);
-    c.bench_function("encode", |b| b.iter(|| huffman::encode(&random_string)));
+fn random_string_benchmark(c: &mut Criterion) {
+    c.bench_function("random_string", |b| b.iter(|| random_string(INPUT_SIZE)));
 }
 
-fn decoding_benchmark(c: &mut Criterion) {
-    let random_string = random_string(INPUT_SIZE);
-    let encoded = huffman::encode(&random_string).unwrap();
-    c.bench_function("decode", |b| b.iter(|| huffman::decode(&encoded)));
+fn encoding_benchmark(c: &mut Criterion) {
+    c.bench_function("encode", |b| {
+        b.iter(|| {
+            let random_string = random_string(INPUT_SIZE);
+            huffman::encode(&random_string)
+        })
+    });
 }
 
 fn encoding_decoding_benchmark(c: &mut Criterion) {
@@ -34,8 +36,8 @@ fn encoding_decoding_benchmark(c: &mut Criterion) {
 
 criterion_group! {
     benches,
+    random_string_benchmark,
     encoding_benchmark,
-    decoding_benchmark,
     encoding_decoding_benchmark
 }
 
