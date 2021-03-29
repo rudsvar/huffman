@@ -1,34 +1,34 @@
+use clap::Clap;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "huffman", about = "Compress files using Huffman encoding")]
+#[derive(Debug, Clap)]
+#[clap(name = "huffman", about = "Compress files using Huffman encoding")]
 struct Opt {
     /// The file to read from
-    #[structopt(parse(from_os_str))]
+    #[clap(parse(from_os_str))]
     input_file: PathBuf,
 
     /// The file to write to
-    #[structopt(parse(from_os_str))]
+    #[clap(parse(from_os_str))]
     output_file: PathBuf,
 
     /// Decode a file instead
-    #[structopt(short, long)]
+    #[clap(short, long)]
     decode: bool,
 
     /// Suppresses all output
-    #[structopt(short, long)]
+    #[clap(short, long)]
     quiet: bool,
 
     /// Select how much debug information to print
-    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
+    #[clap(short = 'v', long = "verbose", parse(from_occurrences))]
     verbose: usize,
 }
 
 fn main() -> io::Result<()> {
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
 
     stderrlog::new()
         .module(module_path!())
