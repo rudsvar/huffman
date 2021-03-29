@@ -52,7 +52,7 @@ impl HuffmanTree {
 
         // If there is only one character, a special tree is made.
         if counts.len() == 1 {
-            let (&k, &v) = counts.iter().nth(0).unwrap();
+            let (&k, &v) = counts.iter().next().unwrap();
             return HuffmanTree::Node {
                 zero: Box::new(HuffmanTree::Leaf(k, v)),
                 one: Box::new(HuffmanTree::Leaf(k, v)),

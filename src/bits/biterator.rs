@@ -34,7 +34,7 @@ impl<'a> Iterator for Biterator<'a> {
         // If we run out of data, read more
         if self.pos == self.length {
             match self.source.read(&mut self.buffer) {
-                Err(e) => panic!(e),
+                Err(e) => panic!("{}", e),
                 Ok(0) => return None,
                 Ok(n) => {
                     self.length = 8 * n;
