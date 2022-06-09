@@ -1,9 +1,9 @@
-use clap::Clap;
+use clap::Parser;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 #[clap(name = "huffman", about = "Compress files using Huffman encoding")]
 struct Opt {
     /// The file to read from
