@@ -51,7 +51,7 @@ where
     debug!("Constructing tree");
     // Generate a tree using the counts
     let ht = HuffmanTree::from(&counts);
-    let ht_json = serde_json::to_string(&ht)?;
+    let ht_bytes = bincode::serialize(&ht).expect("Failed to serialize");
 
     debug!("Encode and write to tmp");
     // Write encoded data to temporary file
@@ -63,7 +63,9 @@ where
 
     debug!("Write metadata");
     // Write metadata
-    write!(&mut output, "{}\n{}\n", ht_json, n_bits)?;
+    writeln!(&mut output, "{}", ht_bytes.len())?;
+    output.write_all(&ht_bytes)?;
+    writeln!(&mut output, "{}", n_bits)?;
 
     debug!("Append encoded data to output");
     // Append encoded data to output
@@ -99,9 +101,15 @@ where
     let mut output = BufWriter::new(output);
 
     // Read serialized Huffman tree
-    let mut ht_str = String::new();
-    input.read_line(&mut ht_str).expect("Could not read json");
-    let ht: HuffmanTree = serde_json::from_str(&ht_str).expect("Invalid json");
+    let mut ht_len = String::new();
+    input.read_line(&mut ht_len)?;
+    let ht_len: usize = ht_len.trim_end().parse().expect("Failed to parse ht_len");
+
+    let mut ht_bytes = vec![0; ht_len];
+    input
+        .read_exact(&mut ht_bytes)
+        .expect("Could not read bincode");
+    let ht: HuffmanTree = bincode::deserialize(&ht_bytes).expect("Failed to deserialize");
 
     // Read `n_bits`
     let mut n_bits_str = String::new();
