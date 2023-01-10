@@ -7,11 +7,9 @@ use std::path::PathBuf;
 #[clap(name = "huffman", about = "Compress files using Huffman encoding")]
 struct Opt {
     /// The file to read from
-    #[clap(parse(from_os_str))]
     input_file: PathBuf,
 
     /// The file to write to
-    #[clap(parse(from_os_str))]
     output_file: PathBuf,
 
     /// Decode a file instead
@@ -21,22 +19,12 @@ struct Opt {
     /// Suppresses all output
     #[clap(short, long)]
     quiet: bool,
-
-    /// Select how much debug information to print
-    #[clap(short = 'v', long = "verbose", parse(from_occurrences))]
-    verbose: usize,
 }
 
 fn main() -> io::Result<()> {
     let opt = Opt::parse();
 
-    stderrlog::new()
-        .module(module_path!())
-        .quiet(opt.quiet)
-        .verbosity(opt.verbose)
-        .timestamp(stderrlog::Timestamp::Millisecond)
-        .init()
-        .unwrap();
+    tracing_subscriber::fmt().init();
 
     let mut input = fs::File::open(&opt.input_file)?;
     let mut output = fs::File::create(&opt.output_file)?;

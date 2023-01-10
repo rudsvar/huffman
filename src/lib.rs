@@ -2,7 +2,6 @@ pub mod bits;
 pub mod huffman_tree;
 
 use huffman_tree::HuffmanTree;
-use log::*;
 use std::fs;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Seek, Write};
 
@@ -43,17 +42,17 @@ where
     let mut input = BufReader::new(input);
     let mut output = BufWriter::new(output);
 
-    debug!("Counting");
+    tracing::debug!("Counting");
     // Count character frequencies, then return to start
     let counts = counts(&mut input);
     input.seek(std::io::SeekFrom::Start(0))?;
 
-    debug!("Constructing tree");
+    tracing::debug!("Constructing tree");
     // Generate a tree using the counts
     let ht = HuffmanTree::from(&counts);
     let ht_bytes = bincode::serialize(&ht).expect("Failed to serialize");
 
-    debug!("Encode and write to tmp");
+    tracing::debug!("Encode and write to tmp");
     // Write encoded data to temporary file
     let tmp_path = mktemp::Temp::new_file()?;
     let tmp = fs::File::create(&tmp_path)?;
@@ -61,17 +60,17 @@ where
     let n_bits = ht.encode_to(&mut input, &mut tmp)?;
     tmp.flush()?;
 
-    debug!("Write metadata");
+    tracing::debug!("Write metadata");
     // Write metadata
     writeln!(&mut output, "{}", ht_bytes.len())?;
     output.write_all(&ht_bytes)?;
     writeln!(&mut output, "{}", n_bits)?;
 
-    debug!("Append encoded data to output");
+    tracing::debug!("Append encoded data to output");
     // Append encoded data to output
     let mut tmp = fs::File::open(&tmp_path)?;
     io::copy(&mut tmp, &mut output)?;
-    debug!("Done");
+    tracing::debug!("Done");
 
     Ok(())
 }

@@ -22,7 +22,7 @@ pub enum HuffmanTree {
     Leaf(u8, usize),
 }
 
-impl<'a> Ord for HuffmanTree {
+impl Ord for HuffmanTree {
     fn cmp(&self, other: &HuffmanTree) -> cmp::Ordering {
         other.weight().cmp(&self.weight())
     }
@@ -148,7 +148,7 @@ impl HuffmanTree {
         let mut biterator = Biterator::new(input);
 
         while let Some((c, count)) = self.decode_one_to(&mut biterator, 0) {
-            output.write_all(&[c as u8])?;
+            output.write_all(&[c])?;
             bits_read += count;
             if bits_read >= n_bits {
                 break;
