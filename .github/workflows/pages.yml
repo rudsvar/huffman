@@ -1,0 +1,42 @@
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build docs
+        run: cargo doc --no-deps
+
+      - name: Add redirect to crate root
+        run: |
+          echo '<meta http-equiv="refresh" content="0; url=huffman/index.html">' \
+            > target/doc/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
